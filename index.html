@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>You Hoopin? A Visualization of Community through Basketball in New York City</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+  <style>
+    body, html {
+      margin: 0;
+      height: 100%;
+      font-family: Helvetica, sans-serif;
+    }
+
+    #map {
+      height: 100vh;
+      width: 100%;
+      position: relative;
+    }
+
+    .add-story-btn {
+      position: absolute;
+      top: 70px;
+      right: 20px;
+      background-color: #000208;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      transition: background-color 0.2s ease;
+    }
+
+    .add-story-btn:hover {
+      background-color: #ff392f;
+    }
+
+    .add-story-btn img {
+      width: 24px;
+      height: 24px;
+      margin-right: 8px;
+    }
+
+    .story-form {
+      position: absolute;
+      top: 130px;
+      right: 20px;
+      width: 300px;
+      background-color: #ff392f;
+      color: white;
+      border: 1px solid #ff392f;
+      padding: 15px;
+      z-index: 1000;
+      display: none;
+      border-radius: 8px;
+    }
+
+    .story-form textarea,
+    .story-form input[type="text"],
+    .story-form input[type="file"] {
+      width: 100%;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+      padding: 8px;
+      border: none;
+      border-radius: 4px;
+    }
+
+    .story-form textarea {
+      height: 100px;
+      resize: none;
+    }
+
+    .story-form button {
+      width: 100%;
+      padding: 10px;
+      font-weight: bold;
+      background: white;
+      color: #ff392f;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .story-form small {
+      font-size: 11px;
+      display: block;
+      color: #e0e0e0;
+    }
+
+    .story-form h3 {
+      margin-top: 0;
+      color: white;
+    }
+
+    .story-form a {
+      color: #fff;
+      text-decoration: underline;
+    }
+.main-title {
+  position: absolute;
+  top: 20px;
+  left: 50px;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 24px 32px;
+  border-radius: 8px;
+  font-family: Helvetica, sans-serif;
+  font-weight: bold;
+  font-size: 20px;
+  color: #ffffff;
+  box-shadow: 0 3px 6px rgba(105, 105, 105, 0.15);
+  max-width: 450px;
+}
+
+.main-title .subtitle {
+  font-weight: normal;
+  font-size: 20px;
+  color: #ffffff;
+}
+    /* Close (X) button */
+    #closeFormBtn {
+      position: absolute;
+      top: 5px;
+      right: -140px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 30px;
+      cursor: pointer;
+    }
+
+    /* Pulsing temporary marker */
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1.8);
+        opacity: 0;
+      }
+    }
+
+    .pulse-icon {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      background: url('temp-pin.png') no-repeat center/contain;
+    }
+
+    .pulse-icon::after {
+      content: "";
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: rgba(47, 106, 255, 0.5);
+      animation: pulse 1.5s ease-out infinite;
+    }
+
+    .essay-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: #000208;
+  color: #ffffff;
+  border: 2px solid #000000;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transition: background-color 0.2s ease;
+}
+
+.essay-btn:hover {
+  background-color: #ff392f;
+}
+
+.essay-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1500;
+  width: 100vw;
+  height: 100vh;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 60px 20px;
+  box-sizing: border-box;
+}
+
+.essay-modal h2,
+.essay-modal h4,
+.essay-modal p {
+  max-width: 700px;
+  margin: 0 auto 25px auto;
+  color: rgb(255, 255, 255);
+  font-family: Helvetica, sans-serif;
+  line-height: 1.6;
+}
+
+.essay-modal h2 {
+  font-size: 30px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.essay-modal h4 {
+  font-size: 20px;
+  font-weight: normal;
+  color: #cccccc;
+  text-align: center;
+}
+
+.close-essay-btn {
+  position: fixed;
+  top: 25px;
+  right: 25px;
+  font-size: 28px;
+  color: white;
+  background: none;
+  border: none;
+  cursor: pointer;
+  z-index: 1600;
+}
+
+  </style>
+</head>
+
+
+<body>
+
+<!-- Page Title -->
+<header class="main-title">
+  You Hoopin'? <br />
+  <span class="subtitle">A Visualization of Community through Basketball in New York City</span>
+</header>
+
+<div id="map">
+  <!-- Add Story Button -->
+  <button class="add-story-btn" id="openFormBtn">
+    <img src="TextNotification.png" alt="Add Story Icon">
+    Add Your Story
+  </button>
+</div>
+
+<!-- Story Form -->
+<div class="story-form" id="storyForm">
+  <button id="closeFormBtn">✕</button>
+  <h3>Add Your Story</h3>
+  <ol>
+    <li>Click a location on the map.</li>
+    <li>Enter your name, photo (optional), and story.</li>
+    <li>Click "Add".</li>
+  </ol>
+  <input type="text" id="firstName" placeholder="Your first name">
+  <input type="file" id="photoInput" accept="image/*">
+  <textarea id="storyText" placeholder="Type your basketball story here..."></textarea>
+  <small>By submitting, you agree to the <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a>.</small>
+  <button id="submitStory">ADD</button>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+  const map = L.map('map', {
+    center: [40.730610, -73.935242],
+    zoom: 12,
+    maxBounds: [
+      [40.614530, -74.048590],
+      [40.883021, -73.796406]
+    ],
+    maxBoundsViscosity: 1.0
+  });
+
+  L.tileLayer('https://api.maptiler.com/maps/backdrop/{z}/{x}/{y}.png?key=NHU0zVzY2T6UITtYhW0L', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  const storyIcon = L.icon({
+    iconUrl: 'TextNotification.png',
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [0, -30]
+  });
+
+  const tempIcon = L.divIcon({
+    className: 'pulse-icon',
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [0, -30]
+  });
+
+// Courts data
+  const courts = [
+    {
+      name: "Jamal",
+      lat: 40.829105,
+      lng: -73.936190,
+      notes: "Wanna pull up to Rucker? They have a couple games early on Sunday."
+    },
+    {
+      name: "Mark",
+      lat: 40.703646,
+      lng: -73.924095,
+      notes: "Yo Richard, we’re running 5s at Maria Hernandez around 6. You hoppin'?"
+    },
+    {
+      name: "Aiden",
+      lat: 40.715704,
+      lng: -73.936168,
+      notes: "We need a wing on our sqaud, come hoop at Copper Park in about an hour."
+    },
+    {
+      name: "Kenji",
+      lat: 40.681589,
+      lng: -73.959037,
+      notes: "Rich, my guy how you doing? Ball at Crispus Attucks around 6:30. If you're interested.ß"
+    },
+    {
+      name: "DeShawn",
+      lat: 40.705994,
+      lng: -73.934521,
+      notes: "Richard right? Me and a couple friends are playing @ Justice Gilbert Ramirez Park today. Got a good group of guys"
+    },
+    {
+      name: "Malik",
+      lat: 40.698236,
+      lng: -73.918846,
+      notes: "Rich, we hitting Philipa Schuyler for some runs. Be there around 7:30"
+    },
+    {
+      name: "Rex",
+      lat: 40.717390,
+      lng: -73.980266,
+      notes: "Pull up to Masaryk Gym tonight. We got an open run at 7."
+    },
+    {
+      name: "Filip",
+      lat: 40.699355,
+      lng: -73.998138,
+      notes: "You tryna hoop at Brooklyn Bridge Park? We got enough for 3s."
+    },
+    {
+      name: "Luca",
+      lat: 40.7420,
+      lng: -73.9715,
+      notes: "Richard, we're hooping at 35th and 1st. If you can bring another head, we need someone who can hit from deep"
+    },
+    {
+      name: "Toa",
+      lat: 40.705786,
+      lng: -74.011292,
+      notes: "Richard, come get some cardio at Leman Prep Gym. We got keys for tonight."
+    },
+    {
+      name: "Ethan",
+      lat: 40.709871,
+      lng: -73.917684,
+      notes: "Running full at Starr Playground today. You down?"
+    },
+    {
+      name: "Raj",
+      lat: 40.709088,
+      lng: -73.944606,
+      notes: "I know you've been dealing with a lot at work. Come hoop at Martinez Playground after and clear your head."
+    },
+    {
+      name: "Mike",
+      lat: 40.744084,
+      lng: -73.954937,
+      notes: "This Saturday the guys are doing a run in LIC. I think the park is Hunter Point Park"
+    },
+    {
+      name: "Brian",
+      lat: 40.709912,
+      lng: -73.985072,
+      notes: "Yo Richard - putting together a team for basketball city in January, would you be interested? It’s mostly the guys I play pickup with."
+    },
+    {
+      name: "David",
+      lat: 40.714466,
+      lng: -73.999840,
+      notes: "Remember Columbus Park Court today at 5. I also forgot my helmet at your crib, if you can scoop it also."
+    },
+    {
+      name: "Mikhail",
+      lat: 40.717517,
+      lng: -73.993699,
+      notes: "I get off work around 5, you down for a quick game at Grand Street Courts?"
+    },
+    {
+      name: "Jalen",
+      lat: 40.727244,
+      lng: -73.981783,
+      notes: "I know you went out for water, but the last game went quick. They're calling next at Tompkins."
+    },
+    {
+      name: "Andre",
+      lat: 40.725546,
+      lng: -74.011520,
+      notes: "We’re posted up on the far court near Canal Street. You'll see my red hoodie."
+    },
+    {
+      name: "Noah",
+      lat: 40.708796,
+      lng: -73.939030,
+      notes: "I'm coming from home, but some of the guys are running at PS 196 Ten Eyck Courts, meet us in 20."
+    },
+    {
+      name: "Tyrese",
+      lat: 40.728758,
+      lng: -74.002361,
+      notes: "I know last game wasnt great, but meet us at Houston & 6th. Next to the pickleball courts"
+    },
+    {
+      name: "Billy",
+      lat: 40.765369,
+      lng: -73.958935,
+      notes: "We have a private run going on @ 67th St & 2nd Ave Gym, if you wanna join?"
+    }
+  ];
+
+  courts.forEach(court => {
+    const marker = L.marker([court.lat, court.lng], { icon: storyIcon }).addTo(map);
+    marker.bindPopup(`<b>${court.name}</b><br>${court.notes}`);
+  });
+
+  let isAddingStory = false;
+  let selectedLatLng = null;
+  let tempMarker = null;
+
+  document.getElementById("openFormBtn").addEventListener("click", () => {
+    isAddingStory = true;
+    document.getElementById("storyForm").style.display = "block";
+  });
+
+  document.getElementById("closeFormBtn").addEventListener("click", () => {
+    isAddingStory = false;
+    selectedLatLng = null;
+    if (tempMarker) {
+      map.removeLayer(tempMarker);
+      tempMarker = null;
+    }
+    document.getElementById("storyForm").style.display = "none";
+  });
+
+  map.on("click", function(e) {
+    if (isAddingStory) {
+      selectedLatLng = e.latlng;
+
+      if (tempMarker) {
+        map.removeLayer(tempMarker);
+      }
+
+      tempMarker = L.marker(selectedLatLng, { icon: tempIcon }).addTo(map);
+    }
+  });
+
+  document.getElementById("submitStory").addEventListener("click", () => {
+    const firstName = document.getElementById("firstName").value.trim();
+    const storyText = document.getElementById("storyText").value.trim();
+    const photoInput = document.getElementById("photoInput");
+
+    if (!firstName || !storyText || !selectedLatLng) {
+      alert("Please fill all fields and click a location on the map.");
+      return;
+    }
+
+    let popupContent = `<b>${firstName}</b><br>${storyText}`;
+
+    const file = photoInput.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        popupContent += `<br><img src="${e.target.result}" style="width:100%;margin-top:8px;border-radius:4px;" />`;
+        placeFinalMarker(popupContent);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      placeFinalMarker(popupContent);
+    }
+  });
+
+  function placeFinalMarker(popupContent) {
+    if (tempMarker) {
+      map.removeLayer(tempMarker);
+      tempMarker = null;
+    }
+
+    L.marker([selectedLatLng.lat, selectedLatLng.lng], { icon: storyIcon })
+      .addTo(map)
+      .bindPopup(popupContent)
+      .openPopup();
+
+    document.getElementById("firstName").value = "";
+    document.getElementById("storyText").value = "";
+    document.getElementById("photoInput").value = "";
+    document.getElementById("storyForm").style.display = "none";
+    isAddingStory = false;
+    selectedLatLng = null;
+  }
+</script>
+
+<!-- Read Essay Button -->
+<button class="essay-btn" id="openEssayBtn">
+  📖 Read the Essay
+</button>
+
+<!-- Essay Modal -->
+<div class="essay-modal" id="essayModal">
+  <button class="close-essay-btn" id="closeEssayBtn">✕</button>
+  <h2>You Hoopin'</h2>
+  <h4>A Visual Essay of Community through Basketball in NYC</h4>
+  <p>My first love was sports. Sports brought me to many places and taught me many lessons in life. Some of these lessons are the foundations of hard work, preparation, teamwork, and conflict resolution. The lesson that stuck with me most was: losing is a part of the game. I spent much of my life trying to avoid the pain of losing—a pain so heavy it can make you feel alone, inadequate, or, in important moments, filled with grief. From the gospel of competition, my attitude in any sport was, If you aren’t coming to compete, then what are you doing?</p>
+  <p>Around the world, there are millions of children who dream of being the best at a sport. Time passes, priorities shift, and those children become adults. The dreams drift far out of sight, but glimpses of them remain. What do you do with a mind that’s ready to compete, but a body that isn’t? You head to your local court.</p>
+  <p>In New York, the courts serve as a touchstone of your neighborhood’s talent. The best courts are notorious for being ultra-competitive. Don’t come here if you aren’t coming to compete. Don’t compete if you aren’t trying to win. These are the places I sought out. These spaces demand more than skill; they demand presence. No one cares what you did yesterday. Where is your game today?</p>
+  <p>Games were quick, intense, and fulfilling. Drunk from the intensity, I would sometimes forget the bonds I had just formed on the court. A well-timed pass followed by a dap, or a key defensive stop celebrated with a pat on the back. These small gestures often led to exchanges of numbers, socials, or names.</p>
+  <p><strong>“Richard?”<br>“Bet. I’ll text you.”</strong></p>
+  <p>The more I played, the more connections I realized I had made. Before I knew it, I had Mike from the courts in Long Island City texting me to play on Saturday mornings, or Mark in Bushwick letting me know his run needed an extra person. Before I knew it, I was growing within a community. Somewhere along the way, my values shifted. What was I doing this for? It wasn’t about the wins or losses anymore—it was about belonging. I had found friendship through movement.</p>
+  <p>The courts became a space for me to express, work, and play. On good days, I head to the court. On bad days, I head to the court. When I want to feel, I head to the court.</p>
+  <p>The language of basketball is simple, yet complex. Anyone can speak it if they’d like. Few truly master it. The language is spoken in all dialects, across different cultures, and on every continent. Yet two people from the same neighborhood can still miscommunicate.</p>
+  <p><strong>My plea is: hear me, even if only for one game.</strong></p>
+
+  <p><strong>- Richard.</strong></p>
+</div>
+
+<script>
+  document.getElementById("openEssayBtn").addEventListener("click", () => {
+    document.getElementById("essayModal").style.display = "block";
+  });
+
+  document.getElementById("closeEssayBtn").addEventListener("click", () => {
+    document.getElementById("essayModal").style.display = "none";
+  });
+</script>
+
+
+</body>
+</html>
